@@ -26,7 +26,7 @@ Automatiza a instalação de drivers de impressoras térmicas, plugins web e con
 Para executar a ferramenta, abra o **PowerShell como Administrador** e cole o comando abaixo:
 
 ```powershell
-Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/kevinbsr/dasa-support-toolbox/main/main.ps1'))
+Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/kevinbsr/dasa-support-toolbox/refs/heads/main/main.ps1'))
 ```
 
 **Nota**: Este comando baixa e executa a versão mais recente diretamente da memória, sem precisar salvar arquivos no computador do cliente.
