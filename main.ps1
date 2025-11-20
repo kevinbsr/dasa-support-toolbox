@@ -2,11 +2,10 @@
 .SYNOPSIS
     DASA SUPPORT TOOLBOX - Entry Point
 .DESCRIPTION
-    Versão com correção de Encoding (UTF-8) para exibir emojis e acentos corretamente.
+    Versão com Invoke-RestMethod (Método validado na rede corporativa).
 #>
 
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-$OutputEncoding = [System.Text.Encoding]::UTF8
 
 $currentPrincipal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
 if (-not $currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
@@ -24,25 +23,30 @@ New-Item -ItemType Directory -Force -Path $TempDir | Out-Null
 
 function Get-RemoteCode {
     param($ModuleName)
-    Write-Host "⌛ Baixando módulo: $ModuleName..." -ForegroundColor DarkGray
+    $Url = "$RepoURL/modules/$ModuleName"
+    Write-Host "⌛ Carregando: $ModuleName..." -ForegroundColor DarkGray
+    
     try {
-        $WebClient = New-Object System.Net.WebClient
-        $WebClient.Encoding = [System.Text.Encoding]::UTF8
-        $Url = "$RepoURL/modules/$ModuleName?v=$(Get-Random)"
-        return $WebClient.DownloadString($Url)
+        return Invoke-RestMethod -Uri $Url -ErrorAction Stop
     } catch {
-        Write-Host "❌ Erro ao baixar $ModuleName. Verifique a internet." -ForegroundColor Red
+        Write-Host "❌ Erro ao baixar $ModuleName." -ForegroundColor Red
+        Write-Host "   Detalhe: $($_.Exception.Message)" -ForegroundColor Gray
         return $null
     }
 }
 
 $UtilsCode = Get-RemoteCode "utils.ps1"
 if ($UtilsCode) {
-    Invoke-Expression $UtilsCode
+    try {
+        Invoke-Expression $UtilsCode
+    } catch {
+        Write-Warning "Erro ao executar o código do utils.ps1"
+        Write-Host $_.Exception.Message
+        Pause; Exit
+    }
 } else {
-    Write-Warning "Falha crítica ao carregar o núcleo. Encerrando."
-    Pause
-    Exit
+    Write-Warning "Falha crítica: Não foi possível baixar o utils.ps1. Verifique a internet."
+    Pause; Exit
 }
 
 do {
