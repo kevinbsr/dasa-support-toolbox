@@ -68,7 +68,7 @@ try { Add-Type -TypeDefinition $signature } catch {}
 function Show-Header {
     Clear-Host
     Write-Host "========================================================" -ForegroundColor Blue
-    Write-Host "         DASA SUPPORT TOOLBOX v1.0                      " -ForegroundColor White
+    Write-Host "         🚀 DASA SUPPORT TOOLBOX v1                     " -ForegroundColor White
     Write-Host "         Dev: Kevin Benevides (Compass UOL)             " -ForegroundColor Gray
     Write-Host "========================================================" -ForegroundColor Blue
     Write-Host ""
@@ -79,12 +79,12 @@ function Baixar-Arquivo {
     $ZipPath = "$TempDir\$ArquivoZip"
     $ExtractPath = "$TempDir\$($ArquivoZip.Replace('.zip',''))"
     
-    Write-Host ">> Baixando $Nome..." -ForegroundColor Cyan
+    Write-Host "⬇️  Baixando $Nome..." -ForegroundColor Cyan
     try {
         Invoke-WebRequest -Uri "$AssetsURL/$ArquivoZip" -OutFile $ZipPath -ErrorAction Stop
         Expand-Archive -Path $ZipPath -DestinationPath $ExtractPath -Force
     } catch {
-        Write-Host "X Erro no download/extracao. Verifique conexao." -ForegroundColor Red
+        Write-Host "❌ Erro no download/extração. Verifique conexão." -ForegroundColor Red
         return $null
     }
 
@@ -92,30 +92,30 @@ function Baixar-Arquivo {
     if (!(Test-Path $ExePath)) { $ExePath = "$ExtractPath\$($ArquivoZip.Replace('.zip',''))\$ExecutavelInterno" }
 
     if (Test-Path $ExePath) { return $ExePath }
-    Write-Host "X Executavel nao encontrado: $ExecutavelInterno" -ForegroundColor Red
+    Write-Host "❌ Executável não encontrado: $ExecutavelInterno" -ForegroundColor Red
     return $null
 }
 
 function Enviar-Comando {
     param($Printer, $Cmd, $Desc)
-    Write-Host ">> Aplicando: $Desc..." -ForegroundColor Cyan
+    Write-Host "⚙️  Aplicando: $Desc..." -ForegroundColor Cyan
     try {
         [RawPrinterHelper]::SendStringToPrinter($Printer, $Cmd) | Out-Null
-        Write-Host "[OK] Comando enviado!" -ForegroundColor Green
+        Write-Host "✅ Comando enviado!" -ForegroundColor Green
     } catch {
-        Write-Host "X Falha de comunicacao." -ForegroundColor Red
+        Write-Host "❌ Falha de comunicação." -ForegroundColor Red
     }
 }
 
 function Listar-Impressoras {
-    Write-Host ">> SELECIONE A IMPRESSORA:" -ForegroundColor Yellow
+    Write-Host "🖨️  SELECIONE A IMPRESSORA:" -ForegroundColor Yellow
     $printers = Get-Printer | Where-Object { $_.Name -notmatch "PDF|XPS|OneNote|Fax" }
     if ($printers.Count -eq 0) { return $null }
     
     $i = 1
     foreach ($p in $printers) { Write-Host "   [$i] $($p.Name)"; $i++ }
     Write-Host ""
-    $sel = Read-Host " Digite o numero"
+    $sel = Read-Host " Digite o número"
     if ($sel -match '^\d+$' -and $sel -le $printers.Count -and $sel -gt 0) { return $printers[$sel - 1].Name }
     return $null
 }
