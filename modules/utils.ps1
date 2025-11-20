@@ -68,7 +68,7 @@ try { Add-Type -TypeDefinition $signature } catch {}
 function Show-Header {
     Clear-Host
     Write-Host "========================================================" -ForegroundColor Blue
-    Write-Host "         🚀 DASA SUPPORT TOOLBOX v11.0 (MODULAR)        " -ForegroundColor White
+    Write-Host "         🚀 DASA SUPPORT TOOLBOX v1                     " -ForegroundColor White
     Write-Host "         Dev: Kevin Benevides (Compass UOL)             " -ForegroundColor Gray
     Write-Host "========================================================" -ForegroundColor Blue
     Write-Host ""
