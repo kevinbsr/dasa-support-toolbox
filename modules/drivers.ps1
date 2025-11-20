@@ -1,7 +1,7 @@
 function Menu-Instalacao {
     do {
         Show-Header
-        Write-Host "📂 INSTALAÇÃO DE DRIVERS" -ForegroundColor Yellow
+        Write-Host ">> INSTALACAO DE DRIVERS" -ForegroundColor Yellow
         Write-Host " [1] Zebra (GC420t / ZD220)"
         Write-Host " [2] Elgin L42 Pro"
         Write-Host " [3] Honeywell PC42t"
