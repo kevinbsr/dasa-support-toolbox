@@ -234,26 +234,21 @@ function Menu-Instalacao {
 
 function Menu-Manutencao {
     $Printer = Listar-Impressoras
-    if (!$Printer) { Start-Sleep 2; return }
+    if (!$Printer) { Write-Host "Nenhuma impressora!"; Start-Sleep 2; return }
 
     $Protocolo = "EPL"
     if ($Printer -match "Honeywell" -or $Printer -match "PC42") { $Protocolo = "ZPL" }
 
-    $EPL_Config = "
-    N
-    OD
-    q400
-    Q200,24
-    S2
-    D10
-    "
-    $EPL_Test = "
-    N
-    A50,50,0,4,1,1,N,""TESTE DASA - EPL""
-    P1
-    "
+    # Comandos EPL (Strings simples com caractere de nova linha `n)
+    $EPL_Config = "`nN`nOD`nq400`nQ200,24`nS2`nD10`n"
+    $EPL_Test = "`nN`nA50,50,0,4,1,1,N,""TESTE DASA - EPL""`nP1`n"
+    
+    # Comandos ZPL (Strings simples)
     $ZPL_Config = "^XA^MTD^PW406^LL203^JUS^XZ"
     $ZPL_Test = "^XA^FO50,50^A0N,50,50^FDTESTE DASA - ZPL^FS^XZ"
+    $ZPL_Calibrate = "~JC"
+    $ZPL_Reset = "^XA^JZA^XZ"
+
 
     do {
         Show-Header
@@ -279,13 +274,13 @@ function Menu-Manutencao {
         if ($Protocolo -eq "EPL") {
             if ($opt -eq '1') { Enviar-Comando $Printer $EPL_Config "Config DASA (EPL)" }
             if ($opt -eq '2') { Enviar-Comando $Printer "`nxa`n" "Calibracao (EPL)" }
-            if ($opt -eq '3') { Enviar-Comando $Printer "`nN`n" "Reset Buffer" }
-            if ($opt -eq '4') { Enviar-Comando $Printer $EPL_Test "Teste" }
+            if ($opt -eq '3') { Enviar-Comando $Printer $EPL_Reset "Reset Buffer (EPL)" }
+            if ($opt -eq '4') { Enviar-Comando $Printer $EPL_Test "Teste (EPL)" }
         } else {
             if ($opt -eq '1') { Enviar-Comando $Printer $ZPL_Config "Config DASA (ZPL)" }
-            if ($opt -eq '2') { Enviar-Comando $Printer "~JC" "Calibracao (ZPL)" }
-            if ($opt -eq '3') { Enviar-Comando $Printer "^XA^JZA^XZ" "Factory Reset" }
-            if ($opt -eq '4') { Enviar-Comando $Printer $ZPL_Test "Teste" }
+            if ($opt -eq '2') { Enviar-Comando $Printer $ZPL_Calibrate "Calibracao (ZPL)" }
+            if ($opt -eq '3') { Enviar-Comando $Printer $ZPL_Reset "Factory Reset (ZPL)" }
+            if ($opt -eq '4') { Enviar-Comando $Printer $ZPL_Test "Teste (ZPL)" }
         }
         Pause
     } while ($true)
