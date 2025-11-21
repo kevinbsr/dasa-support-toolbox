@@ -1,17 +1,22 @@
 <#
 .SYNOPSIS
-    DASA SUPPORT TOOLBOX v1.0 (Standalone Edition)
+    DASA SUPPORT TOOLBOX v10.1 (Zebra Submenu and Installation Fix)
 .DESCRIPTION
-    Versao de arquivo unico para contornar bloqueios de rede corporativa.
-    Compatibilidade total ASCII (sem emojis).
+    Versao que implementa submenu de selecao de modelo/protocolo para impressoras Zebra.
 #>
 
-$TempDir = "C:\DasaToolbox\Temp"
-$BaseURL = "https://github.com/kevinbsr/dasa-support-toolbox/raw/main/assets"
+$currentPrincipal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
+if (-not $currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+    Write-Warning "ERRO: Execute como ADMINISTRADOR!"
+    Start-Sleep 3
+    Exit
+}
 
-if (!(Test-Path $TempDir)) { New-Item -ItemType Directory -Force -Path $TempDir | Out-Null }
+$BaseURL = "https://raw.githubusercontent.com/kevinbsr/dasa-support-toolbox/main/assets"
+$TempDir = "$env:TEMP\DasaToolbox"
+if (Test-Path $TempDir) { Remove-Item $TempDir -Recurse -Force -ErrorAction SilentlyContinue }
+New-Item -ItemType Directory -Force -Path $TempDir | Out-Null
 
-# CLASSE C# PARA COMUNICACAO DIRETA COM IMPRESSORA (RAW PRINTING)
 $signature = @'
 using System;
 using System.IO;
@@ -81,7 +86,7 @@ try { Add-Type -TypeDefinition $signature } catch {}
 function Show-Header {
     Clear-Host
     Write-Host "========================================================" -ForegroundColor Blue
-    Write-Host "         DASA SUPPORT TOOLBOX - AOL 2.0                 " -ForegroundColor White
+    Write-Host "         DASA SUPPORT TOOLBOX v1.0                      " -ForegroundColor White
     Write-Host "         Dev: Kevin Benevides (Compass UOL)             " -ForegroundColor Gray
     Write-Host "========================================================" -ForegroundColor Blue
     Write-Host ""
@@ -93,26 +98,19 @@ function Baixar-Arquivo {
     $FolderName = $ArquivoZip.Replace(".zip", "")
     $ExtractPath = "$TempDir\$FolderName"
     
-    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-
     Write-Host ">> Baixando $Nome..." -ForegroundColor Cyan
     try {
-        $WebClient = New-Object System.Net.WebClient
-        $WebClient.DownloadFile("$BaseURL/$ArquivoZip", $ZipPath)
-        
-        Write-Host ">> Extraindo..." -ForegroundColor DarkGray
+        Invoke-WebRequest -Uri "$BaseURL/$ArquivoZip" -OutFile $ZipPath -ErrorAction Stop
         Expand-Archive -Path $ZipPath -DestinationPath $ExtractPath -Force
     } catch {
-        Write-Host "X Erro no download/extracao. Verifique a internet ou proxy." -ForegroundColor Red
+        Write-Host "X Erro no download/extracao. Verifique a conexao ou nome do ZIP no GitHub." -ForegroundColor Red
         return $null
     }
 
-    $ExeRaiz = "$ExtractPath\$ExecutavelInterno"
-    $ExeSub = "$ExtractPath\$FolderName\$ExecutavelInterno"
+    $ExePath = "$ExtractPath\$ExecutavelInterno"
+    if (!(Test-Path $ExePath)) { $ExePath = "$ExtractPath\$FolderName\$ExecutavelInterno" }
 
-    if (Test-Path $ExeRaiz) { return $ExeRaiz }
-    if (Test-Path $ExeSub) { return $ExeSub }
-    
+    if (Test-Path $ExePath) { return $ExePath }
     Write-Host "X Executavel nao encontrado: $ExecutavelInterno" -ForegroundColor Red
     return $null
 }
@@ -122,16 +120,17 @@ function Enviar-Comando {
     Write-Host ">> Aplicando: $Desc..." -ForegroundColor Cyan
     try {
         [RawPrinterHelper]::SendStringToPrinter($Printer, $Cmd) | Out-Null
-        Write-Host "[OK] Comando enviado!" -ForegroundColor Green
+        if (-not $?) { Write-Host "X Falha ao enviar comando (Impressora Offline?)" -ForegroundColor Red }
+        else { Write-Host "[OK] Comando enviado!" -ForegroundColor Green }
     } catch {
-        Write-Host "X Falha de comunicacao com a impressora." -ForegroundColor Red
+        Write-Host "X Erro de comunicacao: $_" -ForegroundColor Red
     }
 }
 
 function Listar-Impressoras {
     Write-Host ">> SELECIONE A IMPRESSORA:" -ForegroundColor Yellow
     $printers = Get-Printer | Where-Object { $_.Name -notmatch "PDF|XPS|OneNote|Fax" }
-    if ($printers.Count -eq 0) { Write-Host "X Nenhuma impressora encontrada." -ForegroundColor Red; return $null }
+    if ($printers.Count -eq 0) { return $null }
     
     $i = 1
     foreach ($p in $printers) { Write-Host "   [$i] $($p.Name)"; $i++ }
@@ -141,11 +140,63 @@ function Listar-Impressoras {
     return $null
 }
 
+$EPL_Config = "`nN`nOD`nq400`nQ200,24`nS2`nD10`n"
+$EPL_Test = "`nN`nA50,50,0,4,1,1,N,""TESTE DASA - EPL""`nP1`n"
+$ZPL_Config = "^XA^MTD^PW406^LL203^JUS^XZ"
+$ZPL_Test = "^XA^FO50,50^A0N,50,50^FDTESTE DASA - ZPL^FS^XZ"
+
+function Menu-Zebra-Instalacao {
+    $ZebraExe = Baixar-Arquivo "Zebra" "Zebra.zip" "PrnInst.exe"
+    if (!$ZebraExe) { return }
+
+    do {
+        Show-Header
+        Write-Host ">> SELECAO DE MODELO ZEBRA (PRE-INSTALACAO)" -ForegroundColor Yellow
+        Write-Host " [1] GC420t (EPL) - Padrao DASA"
+        Write-Host " [2] GC420t (ZPL) - Emulacao"
+        Write-Host " [3] ZD220 (EPL)"
+        Write-Host " [4] ZD220 (ZPL)"
+        Write-Host " [5] ZD230 (EPL)"
+        Write-Host " [6] TLP2844 (EPL)"
+        Write-Host " [B] Voltar"
+        Write-Host ""
+
+        $opt = Read-Host " Escolha"
+        if ($opt -eq 'b') { break }
+
+        $Modelos = @{
+            '1' = "ZDesigner GC420t (EPL)"
+            '2' = "ZDesigner GC420t (ZPL)"
+            '3' = "ZDesigner ZD220-203dpi EPL"
+            '4' = "ZDesigner ZD220-203dpi ZPL"
+            '5' = "ZDesigner ZD230-203dpi EPL"
+            '6' = "ZDesigner TLP 2844"
+        }
+        
+        $ModeloSelecionado = $Modelos[$opt]
+        
+        if ($ModeloSelecionado) {
+            $Args = "/PREINSTALL `"$ModeloSelecionado`""
+            Write-Host ">> Instalando drivers para $ModeloSelecionado..." -ForegroundColor Cyan
+            
+            # Executa o PrnInst.exe
+            Start-Process -FilePath $ZebraExe -ArgumentList $Args -Wait -NoNewWindow
+            
+            Write-Host "✅ Drivers pre-instalados. Conecte a impressora na USB." -ForegroundColor Green
+        }
+        else {
+             Write-Host "X Opcao invalida." -ForegroundColor Red
+        }
+
+        Pause
+    } while ($true)
+}
+
 function Menu-Instalacao {
     do {
         Show-Header
-        Write-Host ">> INSTALACAO DE DRIVERS" -ForegroundColor Yellow
-        Write-Host " [1] Zebra (GC420t / ZD220)"
+        Write-Host "📂 INSTALACAO DE DRIVERS" -ForegroundColor Yellow
+        Write-Host " [1] Zebra (GC420t / ZD220 / TLP2844)"
         Write-Host " [2] Elgin L42 Pro"
         Write-Host " [3] Honeywell PC42t"
         Write-Host " [4] Plugin AOL"
@@ -156,25 +207,27 @@ function Menu-Instalacao {
         if ($opt -eq 'b') { break }
 
         if ($opt -eq '1') {
-            $Exe = Baixar-Arquivo "Zebra" "Zebra.zip" "PrnInst.exe"
-            if ($Exe) { Start-Process $Exe -Wait }
+            Menu-Zebra-Instalacao 
         }
         elseif ($opt -eq '2') {
             $Exe = Baixar-Arquivo "Elgin" "Elgin.zip" "DriverWizard.exe"
             if ($Exe) { 
-                $args = 'install /product:"Elgin L42 Pro" /quiet'
-                Start-Process $Exe -ArgumentList $args -Wait 
+                $argsElgin = 'install /product:"Elgin L42 Pro" /quiet'
+                Start-Process $Exe -ArgumentList $argsElgin -Wait 
+                Write-Host "✅ Instalacao concluida!" -ForegroundColor Green
             }
         }
         elseif ($opt -eq '3') {
             $Exe = Baixar-Arquivo "Honeywell" "Honeywell.zip" "001 - QuickInstaller.exe"
-            if ($Exe) { Start-Process $Exe -ArgumentList "/VERYSILENT" -Wait }
+            if ($Exe) { 
+                Start-Process $Exe -ArgumentList "/VERYSILENT" -Wait
+                Write-Host "✅ Instalacao concluida!" -ForegroundColor Green
+            }
         }
         elseif ($opt -eq '4') {
             $Exe = Baixar-Arquivo "Plugin" "Plugin.zip" "Plugin_AOL.exe"
             if ($Exe) { Start-Process $Exe -ArgumentList "/S" -Wait }
         }
-        
         if ($opt -ne 'b') { Pause }
     } while ($true)
 }
@@ -187,18 +240,18 @@ function Menu-Manutencao {
     if ($Printer -match "Honeywell" -or $Printer -match "PC42") { $Protocolo = "ZPL" }
 
     $EPL_Config = "
-N
-OD
-q400
-Q200,24
-S2
-D10
-"
+    N
+    OD
+    q400
+    Q200,24
+    S2
+    D10
+    "
     $EPL_Test = "
-N
-A50,50,0,4,1,1,N,""TESTE DASA - EPL""
-P1
-"
+    N
+    A50,50,0,4,1,1,N,""TESTE DASA - EPL""
+    P1
+    "
     $ZPL_Config = "^XA^MTD^PW406^LL203^JUS^XZ"
     $ZPL_Test = "^XA^FO50,50^A0N,50,50^FDTESTE DASA - ZPL^FS^XZ"
 
@@ -254,19 +307,19 @@ do {
     elseif ($main -eq '3') {
         Write-Host ">> Baixando Anydesk..." -ForegroundColor Cyan
         try {
+            [Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]::Tls12
             $web = New-Object System.Net.WebClient
             $web.DownloadFile("https://download.anydesk.com/AnyDesk.exe", "$env:USERPROFILE\Desktop\AnyDesk.exe")
-            Write-Host "OK: Salvo na Area de Trabalho!" -ForegroundColor Green
-        } catch { Write-Host "Erro no download." }
+            Write-Host "[OK] Salvo na Area de Trabalho!" -ForegroundColor Green
+        } catch { Write-Host "X Erro no download." -ForegroundColor Red }
         Start-Sleep 2
     }
     elseif ($main -eq '4') {
-        Write-Host ">> Parando Spooler..." -ForegroundColor Yellow
-        Stop-Service spooler -Force
+        Write-Host ">> Reiniciando Spooler..." -ForegroundColor Yellow
+        Stop-Service spooler -Force -ErrorAction SilentlyContinue
         Remove-Item "$env:systemroot\System32\spool\PRINTERS\*" -Force -ErrorAction SilentlyContinue
         Start-Service spooler
-        Write-Host "OK: Spooler Reiniciado!" -ForegroundColor Green
+        Write-Host "[OK] Spooler Limpo!" -ForegroundColor Green
         Start-Sleep 2
     }
-
 } while ($main -ne 'q')
