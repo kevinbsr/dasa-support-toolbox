@@ -5,6 +5,7 @@ Automatiza a instalação de drivers de impressoras térmicas, plugins web e con
 
 ![PowerShell](https://img.shields.io/badge/PowerShell-5.1%2B-blue?logo=powershell)
 ![Status](https://img.shields.io/badge/Status-Stable-green)
+![Architecture](https://img.shields.io/badge/Architecture-Monolithic_Stand_Alone-orange)
 
 ## ✨ Funcionalidades
 
@@ -29,24 +30,22 @@ Para executar a ferramenta, abra o **PowerShell como Administrador** e cole o co
 $D="C:\DasaToolbox"; $F="$D\dasa-toolbox.ps1"; if(!(Test-Path $D)){New-Item -ItemType Directory -Path $D -Force}; Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/kevinbsr/dasa-support-toolbox/main/dasa-toolbox.ps1' -OutFile $F -UseBasicParsing -ErrorAction Stop; Unblock-File $F -ErrorAction SilentlyContinue; & $F
 ```
 
-**Nota**: Este comando baixa e executa a versão mais recente diretamente da memória, sem precisar salvar arquivos no computador do cliente.
+**Nota**: Este comando baixa e executa a versão mais recente diretamente da memória, sem precisar salvar arquivos no computador do cliente. Se houver um erro de `404 Not Found`, o arquivo pode estar com outro nome. Verifique o repositório no navegador.
 
 ## 🛠️ Arquitetura
 
-O projeto é modular para facilitar a manutenção:
+-  `dasa-toolbox.ps1`: **Arquivo Principal** que contém todo o código C# (para comunicação RAW com impressoras), funções de utilidade, menus e lógica de drivers.
 
-* `main.ps1`: Orquestrador principal. Verifica permissões e baixa os módulos.
-* `modules/utils.ps1`: Contém a classe C# **RawPrinterHelper** para comunicação direta com impressoras via `winspool.drv`.
-* `modules/drivers.ps1`: Lógica de download e instalação silenciosa de drivers.
-* `modules/maintenance.ps1`: Comandos ZPL/EPL para configuração física das impressoras.
+- O design foi consolidado em um único arquivo para garantir a **estabilidade** e **confiabilidade** no ambiente corporativo, principalmente para:
+
+1.  **Bypass de Firewall:** Evita que a segurança da rede bloqueie o script por tentar fazer múltiplos downloads de código em tempo de execução.
+2.  **Garantia de Execução:** Depois do download inicial, a ferramenta é totalmente funcional mesmo sem conexão, pois toda a inteligência está embutida.
+3.  **Core Técnico:** A classe C# `RawPrinterHelper` para comandos ZPL/EPL está embutida, tornando-o um artefato único e poderoso para o suporte.
 
 ## 📦 Dependências
 
-Os drivers e instaladores são baixados sob demanda da pasta `/assets` deste repositório.
-
-* **Zebra:** Utiliza `PrnInst.exe` (Driver oficial Zebra).
-* **Elgin:** Utiliza `DriverWizard.exe` (Seagull Scientific).
-* **Honeywell:** Utiliza `QuickInstaller.exe`.
+* **Download:** Os drivers e instaladores são baixados por HTTPS da pasta `/assets` deste repositório.
+* **Drivers:** Utiliza instaladores oficiais (**ZDesigner/Seagull**) com argumentos de instalação silenciosa (`/S`, `/VERYSILENT`).
 
 ## 🤝 Contribuição
 
@@ -57,13 +56,9 @@ Os drivers e instaladores são baixados sob demanda da pasta `/assets` deste rep
     ```
 3. Faça o Commit:
     ```bash
-    git commit -m 'Add: Suporte a Argox'
+    git commit -m 'feat: adicionar suporte a [Nova Impressora]'
     ```
-4. Faça o Push:
-    ```bash
-    git push origin feature/nova-impressora
-    ```
-5. Abra um Pull Request.
+4. Faça o Push e abra um Pull Request.
 
 ---
-Desenvolvido por **Kevin Benevides** | Compass UOL
+Desenvolvido por **Kevin Benevides** | Compass **UOL**
