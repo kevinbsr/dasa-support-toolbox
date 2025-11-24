@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    DASA SUPPORT TOOLBOX v1.0 - Stable Monolith (ASCII Safe)
+    DASA SUPPORT TOOLBOX v1.0.1 - Stable Monolith (ASCII Safe)
 .DESCRIPTION
     Author: Kevin Benevides
 #>
@@ -22,7 +22,7 @@ if (!(Test-Path $TempDir)) { New-Item -ItemType Directory -Force -Path $TempDir 
 
 Import-Module BitsTransfer -ErrorAction SilentlyContinue
 
-$signature = "
+$signature = '
 using System;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -34,25 +34,25 @@ public class RawPrinterHelper {
         [MarshalAs(UnmanagedType.LPStr)] public string pOutputFile;
         [MarshalAs(UnmanagedType.LPStr)] public string pDataType;
     }
-    [DllImport(`"winspool.Drv`", EntryPoint = `"OpenPrinterA`", SetLastError = true, CharSet = CharSet.Ansi, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+    [DllImport("winspool.Drv", EntryPoint = "OpenPrinterA", SetLastError = true, CharSet = CharSet.Ansi, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
     public static extern bool OpenPrinter([MarshalAs(UnmanagedType.LPStr)] string szPrinter, out IntPtr hPrinter, IntPtr pd);
 
-    [DllImport(`"winspool.Drv`", EntryPoint = `"ClosePrinter`", SetLastError = true, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+    [DllImport("winspool.Drv", EntryPoint = "ClosePrinter", SetLastError = true, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
     public static extern bool ClosePrinter(IntPtr hPrinter);
 
-    [DllImport(`"winspool.Drv`", EntryPoint = `"StartDocPrinterA`", SetLastError = true, CharSet = CharSet.Ansi, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+    [DllImport("winspool.Drv", EntryPoint = "StartDocPrinterA", SetLastError = true, CharSet = CharSet.Ansi, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
     public static extern bool StartDocPrinter(IntPtr hPrinter, Int32 level, [In, MarshalAs(UnmanagedType.LPStruct)] DOCINFOA di);
 
-    [DllImport(`"winspool.Drv`", EntryPoint = `"EndDocPrinter`", SetLastError = true, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+    [DllImport("winspool.Drv", EntryPoint = "EndDocPrinter", SetLastError = true, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
     public static extern bool EndDocPrinter(IntPtr hPrinter);
 
-    [DllImport(`"winspool.Drv`", EntryPoint = `"StartPagePrinter`", SetLastError = true, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+    [DllImport("winspool.Drv", EntryPoint = "StartPagePrinter", SetLastError = true, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
     public static extern bool StartPagePrinter(IntPtr hPrinter);
 
-    [DllImport(`"winspool.Drv`", EntryPoint = `"EndPagePrinter`", SetLastError = true, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+    [DllImport("winspool.Drv", EntryPoint = "EndPagePrinter", SetLastError = true, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
     public static extern bool EndPagePrinter(IntPtr hPrinter);
 
-    [DllImport(`"winspool.Drv`", EntryPoint = `"WritePrinter`", SetLastError = true, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
+    [DllImport("winspool.Drv", EntryPoint = "WritePrinter", SetLastError = true, ExactSpelling = true, CallingConvention = CallingConvention.StdCall)]
     public static extern bool WritePrinter(IntPtr hPrinter, IntPtr pBytes, Int32 dwCount, out Int32 dwWritten);
 
     public static bool SendStringToPrinter(string szPrinterName, string szString) {
@@ -69,8 +69,8 @@ public class RawPrinterHelper {
         IntPtr hPrinter = new IntPtr(0);
         DOCINFOA di = new DOCINFOA();
         bool bSuccess = false;
-        di.pDocName = `"DASA_CMD`";
-        di.pDataType = `"RAW`";
+        di.pDocName = "DASA_CMD";
+        di.pDataType = "RAW";
         if (OpenPrinter(szPrinterName.Normalize(), out hPrinter, IntPtr.Zero)) {
             if (StartDocPrinterA(hPrinter, 1, di)) {
                 if (StartPagePrinter(hPrinter)) {
@@ -84,14 +84,19 @@ public class RawPrinterHelper {
         return bSuccess;
     }
 }
-"
+'
 
-try { Add-Type -TypeDefinition $signature } catch {}
+try {
+    Add-Type -TypeDefinition $signature
+} catch {
+    Write-Warning "ERRO CRITICO: Falha ao compilar driver C#."
+    Write-Warning $_.Exception.Message
+}
 
 function Show-Header {
     Clear-Host
     Write-Host "========================================================" -ForegroundColor Blue
-    Write-Host "              DASA SUPPORT TOOLBOX v1.0                 " -ForegroundColor White
+    Write-Host "            DASA SUPPORT TOOLBOX v1.0.1                 " -ForegroundColor White
     Write-Host "         Dev: Kevin Benevides (Compass UOL)             " -ForegroundColor Gray
     Write-Host "========================================================" -ForegroundColor Blue
     Write-Host ""
@@ -174,7 +179,6 @@ function Instalar-AnyDesk {
     }
 
     $Installer = "$TempDir\AnyDesk_Setup.exe"
-    
     $Success = Download-Bits "https://download.anydesk.com/AnyDesk.exe" $Installer "Baixando AnyDesk"
     if (-not $Success) { return }
 
@@ -345,6 +349,9 @@ function Enviar-Comando {
     param($Printer, $Cmd, $Desc)
     Write-Host ">> Aplicando: $Desc..." -ForegroundColor Cyan
     try {
+        if (-not ([System.Management.Automation.PSTypeName]'RawPrinterHelper').Type) {
+            throw "Classe de impressao nao carregada."
+        }
         [RawPrinterHelper]::SendStringToPrinter($Printer, $Cmd) | Out-Null
         if (-not $?) { Write-Host "[ERRO] Falha ao enviar comando (Impressora Offline?)" -ForegroundColor Red }
         else { Write-Host "[OK] Comando enviado!" -ForegroundColor Green }
@@ -375,10 +382,21 @@ function Menu-Manutencao-Selecao {
     return $Nome
 }
 
-$EPL_Config_Str     = "`nN`nOD`nq400`nQ200,24`nS2`nD10`n"
+$EPL_Config_Str = "
+N
+OD
+q400
+Q200,24
+S2
+D10
+R0,0
+JF
+"
+
 $EPL_Reset_Str      = "`nN`n"
 $EPL_Calibrate_Str  = "`nxa`n"
-$EPL_Test_Str       = "
+
+$EPL_Test_Str = "
 N
 ZB
 q400
@@ -439,7 +457,6 @@ function Menu-Instalacao {
                     Write-Host ">> Abrindo instalador..." -ForegroundColor Cyan
                     Write-Host "   Por favor, realize a instalacao na janela que se abriu." -ForegroundColor White
                     
-                    # Nao usamos mais -Wait para nao travar se o usuario demorar
                     Start-Process -FilePath $PluginLocal
                     
                     Write-Host ""
