@@ -8,28 +8,25 @@ Automatiza a instalação de drivers de impressoras térmicas, plugins web e con
 ![Architecture](https://img.shields.io/badge/Architecture-Monolithic_Stand_Alone-orange)
 
 ## ✨ Funcionalidades
+* **Drivers Universais:** Instala Zebra, Elgin e Honeywell automaticamente (via injeção de .INF).
 
-* **Instalação Automática de Drivers:**
-    * 🦓 Zebra (GC420t, ZD220, TLP2844)
-    * 🏷️ Elgin (L42 Pro)
-    * 🐝 Honeywell (PC42t)
-* **Manutenção e Configuração:**
-    * Calibração automática (Auto-Sense).
-    * Configuração forçada de tamanho (5x2.5cm) via RAW Printing (USB).
-    * Alternância de protocolos (EPL/ZPL).
-    * Limpeza de Spooler de Impressão.
-* **Ferramentas:**
-    * Instalação silenciosa do Anydesk.
-    * Instalação do Plugin de Impressão AOL.
+* **Manutenção:** Calibração, Reset e Teste de Impressão (Layout DASA Real).
+
+* **Plugin AOL:** Download direto do servidor DASA e instalação assistida.
+
+* **Ferramentas**: Instalação do AnyDesk e Utilitários de Fabricante.
+
+* **Limpeza:** Desinstalação cirúrgica de impressoras e limpeza de Spooler.
 
 ## ⚡ Como Usar (Quick Start)
 
-Para executar a ferramenta, abra o **PowerShell como Administrador** e cole o comando abaixo:
+1. Acesse a máquina do cliente via **AnyDesk**.
+2. Abra o **PowerShell como Administrador**.
+3. Copie e cole o comando abaixo:
 
 ```powershell
-$D="C:\DasaToolbox"; $F="$D\dasa-toolbox.ps1"; if(!(Test-Path $D)){New-Item -ItemType Directory -Path $D -Force}; Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/kevinbsr/dasa-support-toolbox/main/dasa-toolbox.ps1' -OutFile $F -UseBasicParsing -ErrorAction Stop; Unblock-File $F -ErrorAction SilentlyContinue; & $F
+Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('[https://raw.githubusercontent.com/kevinbsr/dasa-support-toolbox/main/dasa-toolbox.ps1](https://raw.githubusercontent.com/kevinbsr/dasa-support-toolbox/main/dasa-toolbox.ps1)'))
 ```
-
 **Nota**: Este comando baixa e executa a versão mais recente diretamente da memória, sem precisar salvar arquivos no computador do cliente. Se houver um erro de `404 Not Found`, o arquivo pode estar com outro nome. Verifique o repositório no navegador.
 
 ## 🛠️ Arquitetura
