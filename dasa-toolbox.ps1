@@ -91,7 +91,7 @@ try { Add-Type -TypeDefinition $signature } catch {}
 function Show-Header {
     Clear-Host
     Write-Host "========================================================" -ForegroundColor Blue
-    Write-Host "         DASA SUPPORT TOOLBOX v12.5.23 (Clean)          " -ForegroundColor White
+    Write-Host "              DASA SUPPORT TOOLBOX v1.0                 " -ForegroundColor White
     Write-Host "         Dev: Kevin Benevides (Compass UOL)             " -ForegroundColor Gray
     Write-Host "========================================================" -ForegroundColor Blue
     Write-Host ""
@@ -320,7 +320,7 @@ function Remover-Plugin-AOL {
     }
 
     Write-Host ""
-    Write-Host "✅ Remocao finalizada." -ForegroundColor Green
+    Write-Host "[OK] Remocao finalizada." -ForegroundColor Green
     Pause
 }
 
