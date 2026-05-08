@@ -1,3 +1,7 @@
+> Desenvolvido durante atuação como Analista de Suporte Jr na Compass UOL,
+> para o sistema Álvaro 2.0 da DASA — maior rede de medicina diagnóstica do Brasil.
+> Utilizado em produção pela equipe de suporte técnico.
+
 # 🚀 DASA Support Toolbox (Alvaro Apoio)
 
 Ferramenta de automação em linha de comando (CLI) para a equipe de suporte técnico.
@@ -27,7 +31,6 @@ Automatiza a instalação de drivers de impressoras térmicas, plugins web e con
 ```powershell
 Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/kevinbsr/dasa-support-toolbox/main/dasa-toolbox.ps1'))
 ```
-**Nota**: Este comando baixa e executa a versão mais recente diretamente da memória, sem precisar salvar arquivos no computador do cliente. Se houver um erro de `404 Not Found`, o arquivo pode estar com outro nome. Verifique o repositório no navegador.
 
 ## 🛠️ Arquitetura
 
